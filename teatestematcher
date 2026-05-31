@@ -1,0 +1,152 @@
+"""
+Tea Taste Matcher - Recomendador de Tés por País
+Un programa interactivo que analiza tus preferencias y te sugiere
+el té más famoso del mundo que mejor se adapta a tu gusto.
+"""
+
+import sys
+
+# Base de datos de tés famosos por país
+TEAS = {
+    "Japón": {
+        "nombre": "Matcha",
+        "cafeina": "alta",
+        "dulzor": "bajo",
+        "temperatura_cat": "media",  # ~80°C
+        "notas": ["herbal", "umami", "vegetal"],
+        "dato_cultural": "Se usa en la ceremonia del té japonesa (Chanoyu) y se bate con un chasen de bambú."
+    },
+    "Marruecos": {
+        "nombre": "Té Verde con Menta (Atay)",
+        "cafeina": "media",
+        "dulzor": "alto",
+        "temperatura_cat": "alta",   # ~95°C
+        "notas": ["mentolado", "dulce", "refrescante"],
+        "dato_cultural": "Se sirve desde gran altura para crear espuma y simboliza hospitalidad en la cultura magrebí."
+    },
+    "India": {
+        "nombre": "Masala Chai",
+        "cafeina": "alta",
+        "dulzor": "medio",
+        "temperatura_cat": "alta",   # 100°C
+        "notas": ["especiado", "canela", "cardamomo", "jengibre"],
+        "dato_cultural": "Se hierve con leche y especias en calles y hogares, siendo parte esencial de la rutina diaria."
+    },
+    "Turquía": {
+        "nombre": "Çay",
+        "cafeina": "media",
+        "dulzor": "bajo",
+        "temperatura_cat": "alta",   # ~95°C
+        "notas": ["floral", "robusto", "amargo"],
+        "dato_cultural": "Se toma en vasos tulipán y es el centro de la socialización y negocios en Turquía."
+    },
+    "China": {
+        "nombre": "Longjing (Dragón Bien)",
+        "cafeina": "baja",
+        "dulzor": "medio",
+        "temperatura_cat": "media",  # ~85°C
+        "notas": ["avellana", "suave", "dulce", "floral"],
+        "dato_cultural": "Uno de los tés verdes más prestigiosos de China, cosechado a mano antes del festival Qingming."
+    },
+    "Reino Unido": {
+        "nombre": "English Breakfast",
+        "cafeina": "alta",
+        "dulzor": "bajo",
+        "temperatura_cat": "alta",   # 100°C
+        "notas": ["robusto", "malteado", "amargo"],
+        "dato_cultural": "Se toma tradicionalmente con leche y es el acompañante clásico del afternoon tea británico."
+    }
+}
+
+def obtener_input_valido(mensaje, opciones_validas):
+    """Solicita input al usuario hasta que coincida con una opción válida."""
+    while True:
+        respuesta = input(mensaje).strip().lower()
+        if respuesta in opciones_validas:
+            return respuesta
+        print(f"⚠️ Opción no válida. Elige una de: {', '.join(opciones_validas)}\n")
+
+def obtener_notas_sabor():
+    """Permite al usuario elegir entre 1 y 3 notas de sabor válidas."""
+    opciones = [
+        "herbal", "umami", "vegetal", "mentolado", "dulce", "refrescante",
+        "especiado", "canela", "cardamomo", "jengibre", "floral", "robusto",
+        "amargo", "avellana", "suave", "malteado"
+    ]
+    print("\n🍃 Elige entre 1 y 3 notas de sabor (separadas por coma):")
+    print(f"Opciones disponibles: {', '.join(opciones)}")
+    
+    while True:
+        entrada = input("Tu selección: ").strip().lower()
+        notas = [n.strip() for n in entrada.split(",") if n.strip()]
+        
+        if 1 <= len(notas) <= 3 and all(n in opciones for n in notas):
+            return notas
+        print("⚠️ Entrada inválida. Asegúrate de elegir 1-3 notas de la lista, separadas por coma.\n")
+
+def calcular_puntuacion(tea_data, prefs):
+    """Calcula qué tan bien coincide un té con las preferencias del usuario."""
+    score = 0
+    
+    # Coincidencia de categorías (peso alto)
+    if tea_data["cafeina"] == prefs["cafeina"]:
+        score += 3
+    if tea_data["dulzor"] == prefs["dulzor"]:
+        score += 3
+    if tea_data["temperatura_cat"] == prefs["temperatura_cat"]:
+        score += 2
+        
+    # Coincidencia de notas de sabor (peso acumulativo)
+    for nota in prefs["notas"]:
+        if nota in tea_data["notas"]:
+            score += 1
+            
+    return score
+
+def mostrar_resultado(mejor_tea, pais):
+    """Imprime el resultado final formateado."""
+    print("\n" + "="*40)
+    print("✨ ¡TU TÉ RECOMENDADO ES! ✨")
+    print("="*40)
+    print(f"🌍 País de origen: {pais}")
+    print(f"🍵 Nombre: {mejor_tea['nombre']}")
+    print(f"⭐ Puntuación de coincidencia: {mejor_tea['score']}/11")
+    print(f"💡 Dato cultural: {mejor_tea['dato_cultural']}")
+    print("="*40)
+
+def main():
+    print("🌿 ¡Bienvenido al Tea Taste Matcher! 🌿")
+    print("Descubre qué té famoso del mundo se adapta mejor a tu paladar.\n")
+    
+    while True:
+        # Recopilar preferencias
+        prefs = {
+            "cafeina": obtener_input_valido("¿Prefieres cafeína ALTA, MEDIA o BAJA? ", ["alta", "media", "baja"]),
+            "dulzor": obtener_input_valido("¿Prefieres dulzor ALTO, MEDIO o BAJO? ", ["alto", "medio", "bajo"]),
+            "temperatura_cat": obtener_input_valido("¿Temperatura de infusión preferida? (BAJA <85°C, MEDIA 85-95°C, ALTA >95°C): ", ["baja", "media", "alta"]),
+            "notas": obtener_notas_sabor()
+        }
+        
+        # Buscar el mejor match
+        print("\n🔍 Analizando tu paladar...")
+        mejor_pais = None
+        mejor_score = -1
+        
+        for pais, data in TEAS.items():
+            score = calcular_puntuacion(data, prefs)
+            if score > mejor_score:
+                mejor_score = score
+                mejor_pais = pais
+                mejor_tea = data
+                
+        mejor_tea["score"] = mejor_score
+        mostrar_resultado(mejor_tea, mejor_pais)
+        
+        # Preguntar si quiere repetir
+        repetir = obtener_input_valido("\n¿Quieres probar con otras preferencias? (s/n): ", ["s", "n"])
+        if repetir == "n":
+            print("\n🫖 ¡Gracias por usar Tea Taste Matcher! Que disfrutes tu té.")
+            break
+
+if __name__ == "__main__":
+    main()
